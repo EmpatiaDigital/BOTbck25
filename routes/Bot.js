@@ -9,6 +9,7 @@ const Usuario = require("../models/Usuario");
 const { derivarConHumano } = require("./Componentes/Humano");
 const { productosFlow } = require("./Componentes/Productos");
 const { enviarDireccion } = require("./Componentes/Direccion");
+const { enviarHorario } = require("./Componentes/Horario");
 const { enviarLista } = require("./Componentes/Lista");
 const { enviarServicios } = require("./Componentes/Servicios");
 const {
@@ -68,33 +69,6 @@ const connectBot = async () => {
     },
   });
   
-
-
-
-
-
-  // const store = new MongoStore({ mongoose });
-
-  // client = new Client({
-  //   authStrategy: new RemoteAuth({
-  //     store,
-  //     backupSyncIntervalMs: 60000,
-  //     clientId: "gabot-session",
-  //   }),
-  //   puppeteer: {
-  //     headless: true,
-  //     args: [
-  //       "--no-sandbox",
-  //       "--disable-setuid-sandbox",
-  //       "--disable-dev-shm-usage",
-  //       "--disable-accelerated-2d-canvas",
-  //       "--no-first-run",
-  //       "--no-zygote",
-  //       "--single-process",
-  //       "--disable-gpu",
-  //     ],
-  //   },
-  // });
 
   client.on("qr", async (qr) => {
     qrCodeBase64 = await qrcode.toDataURL(qr);
@@ -284,7 +258,7 @@ const connectBot = async () => {
         return enviarDireccion(client, msg, nombre);
 
       case "5":
-        return msg.reply("⏰ Horarios: Lunes a viernes, de 8 a 18hs.");
+        return enviarHorario(client, msg, nombre);
 
       case "6":
         return derivarConHumano(client, msg, nombre);
