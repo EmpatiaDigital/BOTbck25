@@ -1,45 +1,55 @@
-// Components/Lista.js
-
 const mongoose = require('mongoose');
-
-// Esquema provisorio si no tenés definido
-const listaSchema = new mongoose.Schema({
-  nombre: String,
-  precio: Number
-});
-
-const Lista = mongoose.models.Lista || mongoose.model('Lista', listaSchema);
+const ListaDoc = require('../../models/ListaDoc');
+const { MessageMedia } = require('whatsapp-web.js');
 
 async function enviarLista(client, msg, nombre) {
   try {
-    const productos = await Lista.find().limit(20); // Límite máximo de búsqueda
+    const documentos = await ListaDoc.find().limit(3);
 
-    if (!productos.length) {
+    if (!documentos.length) {
       await msg.reply(`📭 No hay listas disponibles por ahora, ${nombre || 'usuario'}.\n\n¿Qué deseás hacer ahora?\n1️⃣ Volver al menú principal\n2️⃣ Terminar`);
       return;
     }
 
-    const primeros10 = productos.slice(0, 10);
-    let respuesta = `📋 *Lista de productos* para ${nombre || 'vos'}:\n\n`;
+    for (const doc of documentos) {
+      if (!doc.archivoBase64 || typeof doc.archivoBase64 !== 'string' || doc.archivoBase64.trim() === '') {
+        console.error(`❌ Documento con _id ${doc._id} no tiene campo base64 válido.`);
+        await msg.reply(`⚠️ No se pudo enviar el archivo *${doc.titulo || 'sin título'}*. Está incompleto.`);
+        continue;
+      }
 
-    primeros10.forEach((item, index) => {
-      respuesta += `${index + 1}. ${item.nombre} - $${item.precio}\n`;
-    });
+      const mimetype = doc.mimetype || 'application/pdf';
+      const extension =
+        mimetype === 'application/pdf'
+          ? 'pdf'
+          : mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          ? 'docx'
+          : 'bin';
 
-    if (productos.length > 10) {
-      respuesta += `\n🛎 El resto de los productos serán enviados por un admin.`;
+      const filename = doc.nombreArchivo || `documento.${extension}`;
+
+      const media = new MessageMedia(
+        mimetype,
+        doc.archivoBase64,
+        filename
+      );
+
+      await client.sendMessage(msg.from, media, {
+        sendMediaAsDocument: true,
+        caption: `📄 *${doc.titulo || 'Documento'}* enviado para vos, ${nombre || 'usuario'}.`
+      });
+
     }
 
-    respuesta += `\n\n¿Qué deseás hacer ahora?\n1️⃣ Volver al menú principal\n2️⃣ Terminar`;
+    let texto = `✅ Te envié ${documentos.length} archivo(s), ${nombre || 'usuario'}.\n\n`;
+    texto += `¿Qué deseás hacer ahora?\n1️⃣ Volver al menú principal\n2️⃣ Terminar`;
 
-    await msg.reply(respuesta);
-    console.log(`✅ Lista enviada a ${msg.from}`);
-  } catch (err) {
-    console.error('❌ Error al consultar o enviar la lista:', err);
-    await msg.reply('⚠️ Ocurrió un error al buscar la lista. Por favor intentá más tarde.');
+    await msg.reply(texto);
+
+  } catch (error) {
+    console.error('❌ Error al consultar o enviar documentos:', error);
+    await msg.reply('⚠️ Ocurrió un error al buscar o enviar las listas. Intentá más tarde.');
   }
 }
 
-module.exports = { enviarLista }; 
-
- 
+module.exports = { enviarLista };
