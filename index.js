@@ -2,7 +2,10 @@
 const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch'); // Auto-ping interno para Render
+const fileUpload = require('express-fileupload');
 const path = require('path');
+
+// Rutas
 
 const {
   connectBot,
@@ -15,10 +18,20 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const direccionRoutes = require('./routes/direccion');
 const productosRoutes = require('./routes/products');
+const listaDocRoutes = require('./routes/listaDoc');
+const serviciosRoutes = require('./routes/servicios');
+const avatarRoutes = require('./routes/avatar');
+
+app.use(fileUpload()); // ¡IMPORTANTE!
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use(cors());
 app.use('/api', express.json(), direccionRoutes);
 app.use('/api', express.json(), productosRoutes);
+app.use('/api/lista', express.json(), listaDocRoutes);
+app.use('/api', express.json(), serviciosRoutes);
+app.use('/api', express.json(), avatarRoutes);
+
 
 // 🔌 Iniciar el bot una sola vez (MongoDB + WhatsApp)
 connectBot().catch(err => {
@@ -72,7 +85,7 @@ app.listen(PORT, () => {
 
   // 🔄 Auto-ping interno cada 5 minutos (evita suspensión en Render)
   setInterval(() => {
-    const url = `https://botbck25.onrender.com/api/ping`;
+    const url = `http://localhost:${PORT}/api/ping`;
     fetch(url)
       .then(res => res.text())
       .then(txt => console.log(`🟢 Auto-ping: ${txt}`))
