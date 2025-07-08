@@ -1,6 +1,3 @@
-// const { Client, RemoteAuth } = require("whatsapp-web.js");
-// const { MongoStore } = require("wwebjs-mongo");
-
 const { Client, LocalAuth } = require("whatsapp-web.js");
 const qrcode = require("qrcode");
 const mongoose = require("mongoose");
@@ -44,15 +41,13 @@ const connectBot = async () => {
   }
 
   await mongoose.connect(
-    "mongodb+srv://devprueba2025:devprueba2025@cluster0.9x8yltr.mongodb.net/wwebjs?retryWrites=true&w=majority&appName=Cluster0",
+    "mongodb+srv://devprueba2025:devprueba2025@cluster0.9x8yltr.mongodb.net/wwebjs?retryWrites=true&w=majority&appName=Cluster0"
   );
   console.log("🟢 Conectado exitosamente a MongoDB");
 
-
-  
   client = new Client({
     authStrategy: new LocalAuth({
-      clientId: "gabot-session-local", // Podés darle un nombre de sesión para distinguir carpetas locales
+      clientId: "gabot-session-local",
     }),
     puppeteer: {
       headless: true,
@@ -68,7 +63,6 @@ const connectBot = async () => {
       ],
     },
   });
-  
 
   client.on("qr", async (qr) => {
     qrCodeBase64 = await qrcode.toDataURL(qr);
@@ -105,10 +99,55 @@ const connectBot = async () => {
 
   client.on("message", async (msg) => {
     const from = msg.from;
-    const texto = msg.body.trim();
+    const texto = (msg.body || "").trim();
+    const lowerTexto = texto.toLowerCase();
+    const isGroup = msg.from.endsWith("@g.us");
+    const mentionsBot = msg.mentionedIds?.includes("543413559239@c.us");
+    const diceBeSmart = lowerTexto.includes("be smart");
+    const esAudio = msg.hasAudio;
+    const esMultimedia = msg.type === "image" || msg.type === "audio" || msg.type === "video";
+
     usuariosUnicos.add(from);
 
-    // Reset timer de inactividad por usuario
+    const iniciarFlujo = async () => {
+      estadoUsuarios.set(from, { estado: "esperando_nombre" });
+      await msg.reply("Hola, soy *Gabot 🤖*. ¿Cómo puedo ayudarte?");
+
+      // ⏳ Timer de inactividad
+      if (inactividadTimers.has(from)) clearTimeout(inactividadTimers.get(from));
+      inactividadTimers.set(
+        from,
+        setTimeout(async () => {
+          console.log(`⌛ Usuario ${from} inactivo 3 min. Cerrando sesión...`);
+          estadoUsuarios.delete(from);
+          inactividadTimers.delete(from);
+          try {
+            await msg.reply("⌛ Por inactividad la sesión fue cerrada. Podés escribir *Hola* para volver a empezar.");
+          } catch (e) {}
+        }, 3 * 60 * 1000)
+      );
+    };
+
+    // ✅ Caso 1: GRUPO solo responde si dice "be smart" o manda audio o lo mencionan
+    if (isGroup) {
+      if (diceBeSmart || esAudio || mentionsBot || lowerTexto.includes("bot para grupo")) {
+        return iniciarFlujo();
+      } else {
+        return; // No hace nada si no se cumplen condiciones
+      }
+    }
+
+    // ✅ Caso 2: PRIVADO - RESPONDE A UN STATUS (imagen, audio, video)
+    if (esMultimedia && !isGroup) {
+      if (msg.hasQuotedMsg) {
+        const quoted = await msg.getQuotedMessage();
+        if (quoted.fromMe && quoted.type === "status") {
+          return iniciarFlujo();
+        }
+      }
+    }
+
+    // ✅ Caso 3: FLUJO NORMAL EN PRIVADO
     if (inactividadTimers.has(from)) clearTimeout(inactividadTimers.get(from));
     inactividadTimers.set(
       from,
@@ -117,24 +156,19 @@ const connectBot = async () => {
         estadoUsuarios.delete(from);
         inactividadTimers.delete(from);
         try {
-          await msg.reply(
-            "⌛ Por inactividad la sesión fue cerrada. Podés escribir *Hola* para volver a empezar."
-          );
+          await msg.reply("⌛ Por inactividad la sesión fue cerrada. Podés escribir *Hola* para volver a empezar.");
         } catch (e) {}
       }, 3 * 60 * 1000)
     );
 
-    // Si no tiene estado
     if (!estadoUsuarios.has(from)) {
-      if (texto.toLowerCase() === "hola") {
+      if (lowerTexto === "hola") {
         estadoUsuarios.set(from, { estado: "esperando_nombre" });
         return msg.reply(
           "Hola, soy *Gabot 🤖*, un gusto saludarte.\nPara poder ayudarte mejor, necesito saber ¿cómo te llamás?"
         );
       } else {
-        return msg.reply(
-          "Por favor escribí *Hola* para comenzar la conversación."
-        );
+        return msg.reply("Por favor escribí *Hola* para comenzar la conversación.");
       }
     }
 
@@ -142,7 +176,6 @@ const connectBot = async () => {
     let nombre = usuario.nombre || null;
     let estado = usuario.estado || null;
 
-    // Si estamos esperando que diga su nombre
     if (estado === "esperando_nombre") {
       if (texto.length < 25 && !texto.includes(" ")) {
         try {
@@ -179,22 +212,14 @@ const connectBot = async () => {
           }
         } catch (error) {
           console.warn("❌ Error buscando o guardando usuario en DB:", error);
-          return msg.reply(
-            "Ocurrió un error guardando tu nombre. Intentalo más tarde."
-          );
+          return msg.reply("Ocurrió un error guardando tu nombre. Intentalo más tarde.");
         }
       } else {
-        return msg.reply(
-          "Necesito saber tu nombre para ayudarte. Por favor escribí tu nombre sin espacios ni símbolos."
-        );
+        return msg.reply("Necesito saber tu nombre para ayudarte. Por favor escribí tu nombre sin espacios ni símbolos.");
       }
     }
 
-    // Procesar estados especiales de guardar nombre o confirmar reconocido
-    if (
-      estado === "pregunta_guardar_nombre" ||
-      estado === "confirmar_reconocido"
-    ) {
+    if (estado === "pregunta_guardar_nombre" || estado === "confirmar_reconocido") {
       return procesarRespuesta(client, msg, texto, from, estadoUsuarios, inactividadTimers);
     }
 
@@ -211,9 +236,7 @@ const connectBot = async () => {
         await msg.reply("👋 ¡Gracias por comunicarte con Gabot! Hasta pronto.");
         return;
       } else {
-        return msg.reply(
-          "Elegí una opción válida:\n1️⃣ Menú principal\n2️⃣ Terminar"
-        );
+        return msg.reply("Elegí una opción válida:\n1️⃣ Menú principal\n2️⃣ Terminar");
       }
     }
 
@@ -230,9 +253,7 @@ const connectBot = async () => {
         await msg.reply("👋 ¡Gracias por comunicarte con Gabot! Hasta pronto.");
         return;
       } else {
-        return msg.reply(
-          "Elegí una opción válida:\n1️⃣ Menú principal\n2️⃣ Terminar"
-        );
+        return msg.reply("Elegí una opción válida:\n1️⃣ Menú principal\n2️⃣ Terminar");
       }
     }
 
@@ -240,33 +261,24 @@ const connectBot = async () => {
       return productosFlow.responder(client, msg, texto, from, estadoUsuarios);
     }
 
-    // Opciones del menú principal
     switch (texto) {
       case "1":
         estadoUsuarios.set(from, { nombre, estado: "productos" });
         return productosFlow.iniciarFlujo(client, msg, nombre);
-
       case "2":
         estadoUsuarios.set(from, { nombre, estado: "despues_servicios" });
         return enviarServicios(client, msg, nombre);
-
       case "3":
         estadoUsuarios.set(from, { nombre, estado: "despues_lista" });
         return enviarLista(client, msg, nombre);
-
       case "4":
         return enviarDireccion(client, msg, nombre);
-
       case "5":
         return enviarHorario(client, msg, nombre);
-
       case "6":
         return derivarConHumano(client, msg, nombre);
-
       case "7":
-        // Aquí llamo a iniciarTerminar para manejar despedida y guardar o no el nombre
         return iniciarTerminar(client, msg, nombre, from, estadoUsuarios);
-
       default:
         return msg.reply("Por favor elegí una opción válida del 1 al 7.");
     }
