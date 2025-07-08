@@ -12,7 +12,7 @@ async function iniciarTerminar(client, msg, nombre, from, estadoUsuarios) {
       year: 'numeric'
     });
     await msg.reply(
-      `Estas son las opciones:\n1️⃣ Guardar nombre\n2️⃣ Terminar sin guardar`
+      `👋 Hola ${nombre}, puede ser que ya me hayas escrito el ${fechaStr}.\nDisculpá si me confundo.\nSi sos vos, ¡te saludo de nuevo! Estas son las opciones:\n1️⃣ Guardar nombre\n2️⃣ Terminar sin guardar`
     );
     estadoUsuarios.set(from, { nombre, estado: 'pregunta_guardar_nombre' });
   } else {
