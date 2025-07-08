@@ -85,7 +85,7 @@ app.listen(PORT, () => {
 
   // 🔄 Auto-ping interno cada 5 minutos (evita suspensión en Render)
   setInterval(() => {
-    const url = `http://localhost:${PORT}/api/ping`;
+    const url = `https://botbck25.onrender.com/api/ping`;
     fetch(url)
       .then(res => res.text())
       .then(txt => console.log(`🟢 Auto-ping: ${txt}`))
