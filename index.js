@@ -4,7 +4,6 @@ const cors = require('cors');
 const fetch = require('node-fetch'); // Auto-ping interno para Render
 const fileUpload = require('express-fileupload');
 const path = require('path');
-
 // Rutas
 const {
   connectBot,
@@ -91,4 +90,5 @@ app.listen(PORT, () => {
       .catch(err => console.warn('⚠️ Error en auto-ping:', err));
   }, 300000); // 5 minutos
 });
+
 
