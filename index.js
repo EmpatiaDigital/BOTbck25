@@ -6,7 +6,6 @@ const fileUpload = require('express-fileupload');
 const path = require('path');
 
 // Rutas
-
 const {
   connectBot,
   getClient,
@@ -92,3 +91,4 @@ app.listen(PORT, () => {
       .catch(err => console.warn('⚠️ Error en auto-ping:', err));
   }, 300000); // 5 minutos
 });
+
