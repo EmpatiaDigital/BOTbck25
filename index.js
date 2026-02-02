@@ -69,11 +69,14 @@ app.get('/api/status', (req, res) => {
 
 app.get("/api/logout", async (req, res) => {
   try {
+    console.log("🔌 Logout solicitado");
+
     if (client) {
       try {
-        await client.destroy(); // 🔥 más confiable que logout
+        await client.destroy(); // ✅ seguro
+        console.log("🧹 Cliente destruido");
       } catch (e) {
-        console.warn("⚠️ Error destruyendo cliente:", e.message);
+        console.warn("⚠️ Error en destroy:", e.message);
       }
     }
 
@@ -83,10 +86,11 @@ app.get("/api/logout", async (req, res) => {
 
     res.json({ status: "logout_ok" });
   } catch (err) {
-    console.error("❌ Error logout general:", err);
-    res.status(500).json({ error: "Error al cerrar sesión esto es Backend" });
+    console.error("❌ Logout fatal:", err);
+    res.status(500).json({ error: "Error al cerrar sesión" });
   }
 });
+
 
 
 // 🔁 Ruta para mantener vivo el bot (auto-ping para Render)
@@ -107,6 +111,7 @@ app.listen(PORT, () => {
       .catch(err => console.warn('⚠️ Error en auto-ping:', err));
   }, 300000); // 5 minutos
 });
+
 
 
 
