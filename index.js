@@ -51,7 +51,7 @@ app.get("/api/qr", async (req, res) => {
     const qr = getQr();
 
     if (!qr) {
-      return res.json({ qr: null, status: "esperando_qr" });
+      return res.json({ qr: null, status: "esperando_qr esto es el index de backend" });
     }
 
     res.json({ qr, status: "qr_generado" });
@@ -111,6 +111,7 @@ app.listen(PORT, () => {
       .catch(err => console.warn('⚠️ Error en auto-ping:', err));
   }, 300000); // 5 minutos
 });
+
 
 
 
