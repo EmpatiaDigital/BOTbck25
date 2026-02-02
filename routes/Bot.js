@@ -52,7 +52,7 @@ const connectBot = async () => {
 
   // 🔗 MongoDB
   await mongoose.connect(
-    "mongodb+srv://devprueba2022:devprueba2022@cluster0.9x8yltr.mongodb.net/wwebjs?retryWrites=true&w=majority&appName=Cluster0"
+    "mongodb+srv://devprueba2025:devprueba2025@cluster0.9x8yltr.mongodb.net/wwebjs?retryWrites=true&w=majority&appName=Cluster0"
   );
   console.log("🟢 Conectado a MongoDB");
 
@@ -213,5 +213,6 @@ module.exports = {
   getQr: () => qrCodeBase64,
   getUsuariosUnicos: () => usuariosUnicos,
 };
+
 
 
