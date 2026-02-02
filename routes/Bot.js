@@ -93,16 +93,18 @@ const connectBot = async () => {
     console.error("❌ Fallo de autenticación");
   });
 
-  client.on("disconnected", async (reason) => {
-    console.warn("📴 WhatsApp desconectado:", reason);
-    qrCodeBase64 = "";
+client.on("disconnected", async (reason) => {
+  console.warn("📴 WhatsApp desconectado:", reason);
+  qrCodeBase64 = "";
+  isInitialized = false;
 
-    if (reason !== "logout") {
-      console.log("🔄 Reintentando conexión...");
-      await safeDestroyClient();
-      await client.initialize();
-    }
-  });
+  if (reason !== "logout") {
+    console.log("🔄 Reconectando cliente...");
+    await safeDestroyClient();
+    await connectBot(); 
+  }
+});
+
 
   /* ───────────── Mensajes ───────────── */
 
@@ -211,3 +213,4 @@ module.exports = {
   getQr: () => qrCodeBase64,
   getUsuariosUnicos: () => usuariosUnicos,
 };
+
