@@ -67,22 +67,27 @@ app.get('/api/status', (req, res) => {
   res.json({ status: client?.info ? 'activo' : 'no conectado' });
 });
 
-app.get('/api/logout', async (req, res) => {
-  const client = getClient();
+app.get("/api/logout", async (req, res) => {
   try {
     if (client) {
-      await client.logout();
-      await client.destroy();
-      console.log('🔒 Sesión cerrada desde el frontend.');
-      res.json({ message: 'Sesión cerrada correctamente' });
-    } else {
-      res.status(400).json({ error: 'Cliente no iniciado' });
+      try {
+        await client.destroy(); // 🔥 más confiable que logout
+      } catch (e) {
+        console.warn("⚠️ Error destruyendo cliente:", e.message);
+      }
     }
+
+    client = null;
+    qrCodeBase64 = "";
+    isInitialized = false;
+
+    res.json({ status: "logout_ok" });
   } catch (err) {
-    console.error('❌ Error al cerrar sesión:', err);
-    res.status(500).json({ error: 'Error al cerrar sesión' });
+    console.error("❌ Error logout general:", err);
+    res.status(500).json({ error: "Error al cerrar sesión esto es Backend" });
   }
 });
+
 
 // 🔁 Ruta para mantener vivo el bot (auto-ping para Render)
 app.get('/api/ping', (req, res) => {
@@ -102,6 +107,7 @@ app.listen(PORT, () => {
       .catch(err => console.warn('⚠️ Error en auto-ping:', err));
   }, 300000); // 5 minutos
 });
+
 
 
 
