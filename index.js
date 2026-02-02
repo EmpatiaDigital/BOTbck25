@@ -42,14 +42,25 @@ app.get('/api/users', (req, res) => {
   res.json({ count: getUsuariosUnicos().size });
 });
 
-app.get('/api/qr', (req, res) => {
-  const qr = getQr();
-  if (qr) {
-    res.json({ qr });
-  } else {
-    res.json({ message: '✅ Sesión activa o esperando conexión.' });
+app.get("/api/qr", async (req, res) => {
+  try {
+    if (!getClient()) {
+      await connectBot(); // 🔑 esto genera el QR
+    }
+
+    const qr = getQr();
+
+    if (!qr) {
+      return res.json({ qr: null, status: "esperando_qr" });
+    }
+
+    res.json({ qr, status: "qr_generado" });
+  } catch (err) {
+    console.error("❌ Error en /api/qr:", err);
+    res.status(500).json({ error: "Error generando QR" });
   }
 });
+
 
 app.get('/api/status', (req, res) => {
   const client = getClient();
@@ -91,6 +102,7 @@ app.listen(PORT, () => {
       .catch(err => console.warn('⚠️ Error en auto-ping:', err));
   }, 300000); // 5 minutos
 });
+
 
 
 
