@@ -95,13 +95,15 @@ const connectBot = async () => {
 
 client.on("disconnected", async (reason) => {
   console.warn("📴 WhatsApp desconectado:", reason);
+
   qrCodeBase64 = "";
   isInitialized = false;
 
+  await safeDestroyClient();
+
   if (reason !== "logout") {
-    console.log("🔄 Reconectando cliente...");
-    await safeDestroyClient();
-    await connectBot(); 
+    console.log("🔄 Reconectando bot...");
+    await connectBot();
   }
 });
 
@@ -213,6 +215,3 @@ module.exports = {
   getQr: () => qrCodeBase64,
   getUsuariosUnicos: () => usuariosUnicos,
 };
-
-
-
