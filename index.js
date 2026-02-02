@@ -4,7 +4,9 @@ const cors = require('cors');
 const fetch = require('node-fetch'); // Auto-ping interno para Render
 const fileUpload = require('express-fileupload');
 const path = require('path');
+
 // Rutas
+
 const {
   connectBot,
   getClient,
@@ -12,8 +14,9 @@ const {
   getUsuariosUnicos
 } = require('./routes/Bot');
 
+
 const app = express();
-const PORT = `https://botbck25.onrender.com` || 5000;
+const PORT = process.env.PORT || 5000;
 const direccionRoutes = require('./routes/direccion');
 const productosRoutes = require('./routes/products');
 const listaDocRoutes = require('./routes/listaDoc');
@@ -41,16 +44,18 @@ app.get('/api/users', (req, res) => {
   res.json({ count: getUsuariosUnicos().size });
 });
 
+
 app.get("/api/qr", async (req, res) => {
   try {
     if (!getClient()) {
-      await connectBot(); // 🔑 esto genera el QR
+      console.log("🚀 Inicializando bot desde /api/qr");
+      await connectBot();
     }
 
     const qr = getQr();
 
     if (!qr) {
-      return res.json({ qr: null, status: "esperando_qr esto es el index de backend" });
+      return res.json({ qr: null, status: "esperando_qr" });
     }
 
     res.json({ qr, status: "qr_generado" });
@@ -66,31 +71,22 @@ app.get('/api/status', (req, res) => {
   res.json({ status: client?.info ? 'activo' : 'no conectado' });
 });
 
-app.get("/api/logout", async (req, res) => {
+app.get('/api/logout', async (req, res) => {
+  const client = getClient();
   try {
-    console.log("🔌 Logout solicitado");
-
     if (client) {
-      try {
-        await client.destroy(); // ✅ seguro
-        console.log("🧹 Cliente destruido");
-      } catch (e) {
-        console.warn("⚠️ Error en destroy:", e.message);
-      }
+      await client.logout();
+      await client.destroy();
+      console.log('🔒 Sesión cerrada desde el frontend.');
+      res.json({ message: 'Sesión cerrada correctamente' });
+    } else {
+      res.status(400).json({ error: 'Cliente no iniciado' });
     }
-
-    client = null;
-    qrCodeBase64 = "";
-    isInitialized = false;
-
-    res.json({ status: "logout_ok" });
   } catch (err) {
-    console.error("❌ Logout fatal:", err);
-    res.status(500).json({ error: "Error al cerrar sesión" });
+    console.error('❌ Error al cerrar sesión:', err);
+    res.status(500).json({ error: 'Error al cerrar sesión' });
   }
 });
-
-
 
 // 🔁 Ruta para mantener vivo el bot (auto-ping para Render)
 app.get('/api/ping', (req, res) => {
@@ -110,12 +106,3 @@ app.listen(PORT, () => {
       .catch(err => console.warn('⚠️ Error en auto-ping:', err));
   }, 300000); // 5 minutos
 });
-
-
-
-
-
-
-
-
-
