@@ -13,7 +13,7 @@ const {
 } = require('./routes/Bot');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = `https://botbck25.onrender.com` || 5000;
 const direccionRoutes = require('./routes/direccion');
 const productosRoutes = require('./routes/products');
 const listaDocRoutes = require('./routes/listaDoc');
@@ -110,6 +110,7 @@ app.listen(PORT, () => {
       .catch(err => console.warn('⚠️ Error en auto-ping:', err));
   }, 300000); // 5 minutos
 });
+
 
 
 
