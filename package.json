@@ -15,6 +15,7 @@
     "mongoose": "^8.16.1",
     "multer": "^2.0.1",
     "nodemon": "^3.1.10",
+    "puppeteer": "^24.36.1",
     "qrcode": "^1.5.4",
     "whatsapp-web.js": "^1.31.0",
     "wwebjs-mongo": "^1.1.0"
